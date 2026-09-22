@@ -1,0 +1,11 @@
+numpy
+pandas
+tqdm
+datasets
+rank-bm25
+spacy
+sentence-transformers
+scikit-learn
+transformers
+torch
+python-dotenv

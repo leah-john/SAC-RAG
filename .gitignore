@@ -1,0 +1,28 @@
+# Virtual environment
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment variables / API keys
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Dataset files
+data/raw/*
+data/processed/*
+
+# Generated results and logs
+results/*
+logs/*
+
+# IDE
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
