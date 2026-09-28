@@ -1,63 +1,73 @@
-"""
-SAC-RAG main entry point.
-"""
-
 from src.data_loader import load_hotpot
 from src.config import RAW_DATA_DIR
 from src.preprocessing import preprocess_dataset
-from src.bm25_retriever import BM25Retriever
-def main():
+from src.embeddings import LocalEmbedder
+from src.dense_retriever import DenseRetriever
 
+
+def main():
     dataset_path = RAW_DATA_DIR / "hotpot_dev_distractor_v1.json"
 
-    print("SAC-RAG")
-    print("=" * 50)
+    print("=" * 60)
+    print("SAC-RAG DENSE RETRIEVAL TEST")
+    print("=" * 60)
 
-    try:
+    # Load dataset
+    data = load_hotpot(dataset_path, limit=1)
 
-        data = load_hotpot(
-            dataset_path,
-            limit=5
+    # Preprocess
+    processed = preprocess_dataset(data)
+
+    question = processed[0]["question"]
+    documents = processed[0]["documents"]
+
+    print("\nQuestion:")
+    print(question)
+
+    print(f"\nDocuments: {len(documents)}")
+
+    # Load embedding model
+    embedder = LocalEmbedder()
+
+    # Embed documents
+    document_texts = [
+        document["text"]
+        for document in documents
+    ]
+
+    print("\nCreating document embeddings...")
+
+    document_embeddings = embedder.embed_documents(
+        document_texts
+    )
+
+    # Create dense retriever
+    retriever = DenseRetriever(
+        documents,
+        document_embeddings
+    )
+
+    # Embed query
+    print("\nEmbedding query...")
+
+    query_embedding = embedder.embed_query(question)
+
+    # Retrieve
+    results = retriever.retrieve(
+        query_embedding,
+        top_k=10
+    )
+
+    print("\nDense retrieval successful!")
+    print(f"Retrieved documents: {len(results)}")
+
+    print("\nTop results:")
+
+    for i, result in enumerate(results, start=1):
+        print(
+            f"{i}. {result['title']} "
+            f"(score={result['dense_score']:.4f})"
         )
-        
-        print(f"Dataset loaded successfully!")
-        print(f"Number of examples loaded: {len(data)}")
-
-        print("\nFirst question:")
-        print(data[0]["question"])
-
-        print("\nExpected answer:")
-        print(data[0]["answer"])
-        processed_data = preprocess_dataset(data)
-        documents = processed_data[0]["documents"]
-
-        bm25 = BM25Retriever(documents)
-
-        bm25_results = bm25.retrieve(
-            processed_data[0]["question"],
-            top_k=10
-            )
-
-        print("\nBM25 retrieval successful!")
-        print(f"Retrieved documents: {len(bm25_results)}")
-
-        for i, result in enumerate(bm25_results, 1):
-            print(
-                f"{i}. {result['title']} "
-                f"(score={result['bm25_score']:.4f})"
-            )
-        print("\nPreprocessing successful!")
-        print(f"Documents in first question: {len(processed_data[0]['documents'])}")
-
-        print("\nFirst document:")
-        print("Title:", processed_data[0]["documents"][0]["title"])
-        print("Text:", processed_data[0]["documents"][0]["text"][:500])
-
-    except FileNotFoundError:
-
-        print("\nDataset not found.")
-        print("Please download HotpotQA and place it in:")
-        print(dataset_path)
 
 
 if __name__ == "__main__":
